@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  ssh-honeypot:
+    build: .
+    container_name: hades-ssh-honeypot
+    ports:
+      - "2222:2222"
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./honeypot.db:/app/honeypot.db
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - honeypot-network
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: hades-dashboard
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ssh-honeypot
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    restart: unless-stopped
+    networks:
+      - honeypot-network
+
+networks:
+  honeypot-network:
+    driver: bridge
+
+volumes:
+  honeypot-data:
+    driver: local
