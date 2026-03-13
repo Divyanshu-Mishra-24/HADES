@@ -1,175 +1,318 @@
-# HADES SSH Honeypot System
+# HADES – Honeypot based Attack Detection and Exploitation System
 
-A comprehensive SSH honeypot system with real-time dashboard visualization and threat intelligence capabilities.
+HADES is a **cyber-deception and threat monitoring framework** designed to attract, observe, and analyze attacker behaviour by emulating vulnerable network services.
 
-## Features
+The system currently implements an **SSH honeypot** that records login attempts, captures attacker commands, and logs malicious activity for further analysis. The captured data is processed through analytics modules and visualized via a **Blue-Team monitoring dashboard**.
 
-- **SSH Honeypot Service**: Emulates SSH server to capture attacker behavior
-- **Real-time Logging**: Captures authentication attempts and command execution
-- **Threat Profiling**: Advanced analytics for attack pattern detection
-- **Interactive Dashboard**: React-based UI for log visualization
-- **Containerized Deployment**: Docker support for easy deployment
+This project is developed for **cybersecurity research, academic experimentation, and attacker behaviour analysis**.
 
-## Architecture
+---
+
+# Architecture
 
 ```
-Attacker → SSH Honeypot → Database → Analytics Engine → Dashboard
+             ┌───────────────┐
+             │    Attacker   │
+             └───────┬───────┘
+                     │
+                     ▼
+          ┌────────────────────┐
+          │ Honeypot Services  │
+          │  SSH (Implemented) │
+          │  FTP (Planned)     │
+          │  HTTP (Planned)    │
+          └─────────┬──────────┘
+                    │
+                    ▼
+          ┌────────────────────┐
+          │   Log Collector    │
+          │ Structured Events  │
+          └─────────┬──────────┘
+                    │
+                    ▼
+          ┌────────────────────┐
+          │      Database      │
+          │  Attack Telemetry  │
+          └─────────┬──────────┘
+                    │
+                    ▼
+          ┌────────────────────┐
+          │   Analytics Engine │
+          │ Threat Intelligence│
+          └─────────┬──────────┘
+                    │
+                    ▼
+          ┌────────────────────┐
+          │ Blue Team Dashboard│
+          │ Monitoring Console │
+          └────────────────────┘
 ```
 
-## Quick Start
+---
 
-### Prerequisites
+# Project Status
 
-- Docker and Docker Compose
-- Python 3.9+ (for local development)
-- Node.js 18+ (for dashboard development)
+| Module                           | Status      |
+| -------------------------------- | ----------- |
+| SSH Honeypot                     | ✅ Implemented |
+| Dockerized Deployment            | ✅ Implemented |
+| Authentication Logging           | ✅ Implemented |
+| Command Capture                  | ✅ Implemented |
+| Blue-Team Dashboard              | ✅ Implemented |
+| Cloud Deployment                 | ⏳ Pending     |
+| FTP Honeypot                     | 🔜 Planned     |
+| HTTP Honeypot                    | 🔜 Planned     |
+| Multi-Service Honeypot Framework | 🔜 Planned     |
 
-### Using Docker Compose (Recommended)
+---
 
-1. Clone the repository:
+# Features
+
+## SSH Honeypot
+
+- Simulates an SSH server environment
+- Captures attacker login attempts
+- Logs usernames and passwords
+- Records attacker commands
+- Generates unique session IDs
+- Stores attacker activity logs
+
+## Attack Telemetry
+
+The system records:
+
+- Source IP address
+- Username and password attempts
+- Login success or failure
+- Session ID
+- Command execution history
+- Attack timestamps
+
+This allows analysis of:
+
+- Brute-force attacks
+- Credential dictionaries
+- Attacker behaviour
+- Command execution patterns
+
+## Blue-Team Dashboard
+
+The monitoring dashboard provides:
+
+- Real-time attack logs
+- Session tracking
+- Attack frequency visualization
+- Command execution monitoring
+- Credential attempt analysis
+
+## Containerized Deployment
+
+- Fully Dockerized infrastructure
+- Isolated honeypot environment
+- Easy reproducibility and testing
+
+---
+
+# Technology Stack
+
+| Layer          | Technology                                      |
+| -------------- | ----------------------------------------------- |
+| Backend        | Python, Paramiko / Twisted (SSH emulation), REST API |
+| Infrastructure | Docker, Docker Compose                          |
+| Database       | SQLite (current), Elasticsearch / MongoDB (future) |
+| Frontend       | React Dashboard                                 |
+| Analytics      | Python data processing                          |
+
+---
+
+# Project Structure
+
+```
+HADES
+│
+├── honeypots
+│   ├── ssh
+│   │   └── ssh_honeypot.py
+│   ├── ftp        (planned)
+│   └── http       (planned)
+│
+├── api
+│   └── api_server.py
+│
+├── analytics
+│   └── analytics.py
+│
+├── dashboard
+│   └── React frontend
+│
+├── database
+│   └── database.py
+│
+├── docker
+│   └── docker-compose.yml
+│
+├── docs
+│   ├── SRS.md
+│   └── DesignDoc.md
+│
+└── README.md
+```
+
+---
+
+# Running the Project
+
+## Start the System (Docker)
+
+Run the following command to start all services:
+
 ```bash
-git clone <repository-url>
-cd HoneyPot
+docker compose up --build -d
 ```
 
-2. Start all services:
+This will start the honeypot services and supporting components.
+
+---
+
+# Access the Services
+
+Once the containers start successfully:
+
+| Service      | URL                                            |
+| ------------ | ---------------------------------------------- |
+| Dashboard    | [http://localhost:3000](http://localhost:3000) |
+| API Server   | [http://localhost:5000](http://localhost:5000) |
+| SSH Honeypot | `localhost:2222`                               |
+
+---
+
+# Testing the Honeypot (Attack Simulation)
+
+To simulate an attacker connecting to the honeypot, open a new terminal and run:
+
 ```bash
-docker-compose up -d
+ssh test@127.0.0.1 -p 2222
 ```
 
-3. Access the services:
-- **SSH Honeypot**: `ssh://localhost:2222`
-- **Dashboard**: `http://localhost:3000`
-- **API**: `http://localhost:5000`
+Example login attempt:
 
-### Local Development
+```
+username: test
+password: anything
+```
 
-1. Install Python dependencies:
+The honeypot will:
+
+1. Capture the login attempt
+2. Log username and password
+3. Create a session ID
+4. Record commands executed in the session
+
+These logs can be viewed in the **dashboard interface**.
+
+> **Note:** The honeypot uses **port 2222 instead of port 22** to avoid conflicts with the host system SSH service.
+
+---
+
+# Stopping the System
+
+To stop all running containers:
+
 ```bash
-pip install -r requirements.txt
+docker compose down
 ```
 
-2. Start the SSH honeypot:
+---
+
+# Troubleshooting
+
+**Check running containers:**
+
 ```bash
-python ssh_honeypot.py
+docker ps
 ```
 
-3. Start the API server:
+**View container logs:**
+
 ```bash
-python api_server.py
+docker compose logs
 ```
 
-4. Install and start the dashboard:
+**Restart services:**
+
 ```bash
-cd dashboard
-npm install
-npm start
+docker compose restart
 ```
 
-## Components
+---
 
-### SSH Honeypot (`ssh_honeypot.py`)
-- Emulates SSH server on port 2222
-- Captures authentication attempts
-- Simulates shell environment
-- Logs all attacker activities
+# Example Attack Scenario
 
-### Database (`database.py`)
-- SQLite database for log storage
-- Structured data schema for events
-- Query and analytics support
+1. An attacker attempts to connect to the SSH service.
+2. The honeypot captures login attempts.
+3. If login succeeds, a fake shell environment is provided.
+4. All commands executed are recorded.
+5. Attack logs are stored and visualized through the dashboard.
 
-### Analytics Engine (`analytics.py`)
-- Threat profiling and risk assessment
-- Attack pattern detection
-- Behavioral analysis
-- Session risk scoring
+This allows security researchers to analyze attacker behaviour and attack patterns.
 
-### API Server (`api_server.py`)
-- RESTful API for dashboard
-- Real-time data endpoints
-- Export functionality
-- Threat intelligence endpoints
+---
 
-### Dashboard (`dashboard/`)
-- React-based web interface
-- Real-time visualization
-- Interactive charts and graphs
-- Log browsing and filtering
+# Security Design
 
-## API Endpoints
+The honeypot is designed with strict containment to prevent compromise of the host system.
 
-- `GET /api/dashboard` - Complete dashboard data
-- `GET /api/analytics` - Analytics summary
-- `GET /api/auth-logs` - Authentication logs
-- `GET /api/command-logs` - Command execution logs
-- `GET /api/sessions` - Session information
-- `GET /api/threat-intelligence` - Threat intelligence data
-- `GET /api/session-risk/<session_id>` - Session risk analysis
-- `GET /api/ip-analysis/<src_ip>` - Source IP analysis
-- `GET /api/attack-patterns` - Attack pattern detection
-- `GET /api/export` - Export data (JSON)
+Security measures include:
 
-## Security Features
+- Docker container isolation
+- Non-root service execution
+- Simulated shell environment
+- No access to real system files
+- Restricted outbound network connectivity
 
-- **Container Isolation**: Runs in isolated Docker container
-- **Non-root User**: Container runs as non-privileged user
-- **Restricted Shell**: Simulated environment prevents real system access
-- **Safe Logging**: Credentials stored securely for research purposes
-- **Network Restrictions**: Limited outbound connectivity
+---
 
-## Configuration
+# Planned Enhancements
 
-Default settings can be modified in the respective files:
+Future development goals:
 
-- **SSH Port**: Change in `ssh_honeypot.py` (default: 2222)
-- **API Port**: Change in `api_server.py` (default: 5000)
-- **Dashboard Port**: Change in `docker-compose.yml` (default: 3000)
-- **Database**: SQLite file location in `database.py`
+- ☁️ Cloud deployment (AWS / Azure / GCP)
+- 🔀 Multi-service honeypot architecture
+- 📂 FTP honeypot implementation
+- 🌐 HTTP honeypot implementation
+- 🗺️ Geolocation-based attack mapping
+- 🧠 Threat intelligence enrichment
+- 🤖 Machine learning based attack clustering
+- ☸️ Kubernetes orchestration
 
-## Monitoring
+---
 
-The dashboard provides:
+# Research Applications
 
-- **Real-time Statistics**: Attack counts, success rates
-- **Geographic Analysis**: Source IP distribution
-- **Trend Analysis**: Attack patterns over time
-- **Threat Intelligence**: Risk scoring and profiling
-- **Command Analysis**: Most executed commands
-- **Session Details**: Individual attacker sessions
+This project can be used for:
 
-## Data Schema
+- Studying brute-force attacks
+- Analysing credential stuffing
+- Attacker behaviour research
+- Cybersecurity education
+- Deception-based defence research
 
-### Authentication Events
-- timestamp, src_ip, src_port, username, password, success, session_id
+---
 
-### Command Events
-- timestamp, session_id, command, args, duration, success
+# Team
 
-### Sessions
-- session_id, start_time, end_time, src_ip, username, commands_count, duration
+**HADES Development Team**
 
-## Export and Analysis
+Divyanshu Mishra, Pulkit Jain, Harsh Vishwakarma, Amartya Sharma
 
-Data can be exported via:
-- API endpoint: `/api/export?type=json`
-- Direct database access
-- Dashboard export functionality
+---
 
-## Legal Notice
+# Disclaimer
 
-This system is designed for **research and educational purposes only**. 
-Ensure you have proper authorization before deploying any honeypot system.
-Users are responsible for complying with applicable laws and regulations.
+> ⚠️ This project is intended **strictly for cybersecurity research and educational purposes**.
+>
+> Deploy honeypots only in **controlled environments with proper authorization**.
+>
+> Users are responsible for complying with applicable laws and regulations.
 
-## Support
-
-For issues and questions:
-1. Check the logs in Docker containers
-2. Verify network connectivity
-3. Ensure proper port configuration
-4. Review system requirements
-
-## License
-
-This project is provided for educational and research purposes.
+---
