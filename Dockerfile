@@ -17,6 +17,7 @@ RUN useradd -m -u 1000 honeypot && chown -R honeypot:honeypot /app
 USER honeypot
 
 EXPOSE 2222
+EXPOSE 2121
 EXPOSE 5000
 
-CMD ["python", "start.py"]
+CMD ["python", "main.py"]

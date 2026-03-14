@@ -264,6 +264,3 @@ class HoneypotServer:
         finally:
             server_socket.close()
 
-if __name__ == "__main__":
-    honeypot = HoneypotServer()
-    honeypot.start()

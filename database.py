@@ -22,7 +22,8 @@ class HoneypotDatabase:
                 password TEXT NOT NULL,
                 success BOOLEAN NOT NULL,
                 session_id TEXT,
-                user_agent TEXT
+                user_agent TEXT,
+                service TEXT DEFAULT 'ssh'
             )
         ''')
         
@@ -46,14 +47,15 @@ class HoneypotDatabase:
                 src_ip TEXT NOT NULL,
                 username TEXT,
                 commands_count INTEGER DEFAULT 0,
-                duration REAL
+                duration REAL,
+                service TEXT DEFAULT 'ssh'
             )
         ''')
         
         conn.commit()
         conn.close()
     
-    def log_authentication(self, src_ip, src_port, username, password, success=False, user_agent=None):
+    def log_authentication(self, src_ip, src_port, username, password, success=False, user_agent=None, service='ssh'):
         session_id = str(uuid.uuid4()) if success else None
         
         conn = sqlite3.connect(self.db_path)
@@ -61,16 +63,16 @@ class HoneypotDatabase:
         
         cursor.execute('''
             INSERT INTO authentication_events 
-            (timestamp, src_ip, src_port, username, password, success, session_id, user_agent)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (datetime.now().isoformat(), src_ip, src_port, username, password, success, session_id, user_agent))
+            (timestamp, src_ip, src_port, username, password, success, session_id, user_agent, service)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (datetime.now().isoformat(), src_ip, src_port, username, password, success, session_id, user_agent, service))
         
         if success:
             cursor.execute('''
                 INSERT INTO sessions 
-                (session_id, start_time, src_ip, username)
-                VALUES (?, ?, ?, ?)
-            ''', (session_id, datetime.now().isoformat(), src_ip, username))
+                (session_id, start_time, src_ip, username, service)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (session_id, datetime.now().isoformat(), src_ip, username, service))
         
         conn.commit()
         conn.close()
@@ -168,6 +170,9 @@ class HoneypotDatabase:
         
         cursor.execute('SELECT COUNT(*) FROM authentication_events WHERE success = 1')
         analytics['successful_logins'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT service, COUNT(*) as count FROM authentication_events GROUP BY service')
+        analytics['service_breakdown'] = [dict(zip(['service', 'count'], row)) for row in cursor.fetchall()]
         
         cursor.execute('SELECT src_ip, COUNT(*) as count FROM authentication_events GROUP BY src_ip ORDER BY count DESC LIMIT 10')
         analytics['top_source_ips'] = [dict(zip(['src_ip', 'count'], row)) for row in cursor.fetchall()]

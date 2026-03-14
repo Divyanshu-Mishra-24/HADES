@@ -1,12 +1,13 @@
 version: '3.8'
 
 services:
-  ssh-honeypot:
+  multi-honeypot:
     build: .
-    container_name: hades-ssh-honeypot
+    container_name: hades-multi-honeypot
     ports:
-      - "2222:2222"
-      - "5000:5000"
+      - "2222:2222" # SSH Honeypot
+      - "2121:2121" # FTP Honeypot
+      - "5000:5000" # API Server
     volumes:
       - ./data:/app/data
       - ./honeypot.db:/app/honeypot.db
@@ -24,7 +25,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - ssh-honeypot
+      - multi-honeypot
     environment:
       - REACT_APP_API_URL=http://localhost:5000
     restart: unless-stopped
