@@ -1,65 +1,279 @@
+:root {
+  --neon-accent: #00ff41;
+}
+
+[data-theme='dark'] {
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --neon-accent: #00ff41; /* Honeypot green */
+  --neon-glow: rgba(0, 255, 65, 0.2);
+  --text-main: rgba(255, 255, 255, 0.95);
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --bg-page: #0a0a0c;
+  --bg-sidebar: rgba(13, 13, 15, 0.05);
+  --bg-header: rgba(10, 10, 12, 0.05);
+  --card-shadow: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] {
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-highlight: rgba(255, 255, 255, 0.3);
+  --neon-accent: #ff4136; /* Security Red */
+  --neon-glow: rgba(255, 65, 54, 0.15);
+  --text-main: rgba(0, 0, 0, 0.9);
+  --text-muted: rgba(0, 0, 0, 0.5);
+  --bg-page: #f5f7fa;
+  --bg-sidebar: rgba(245, 247, 250, 0.05);
+  --bg-header: rgba(255, 255, 255, 0.05);
+  --card-shadow: rgba(0, 0, 0, 0.05);
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  background-color: transparent;
+  color: var(--text-main);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: 'Source Code Pro', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
 
-.ant-layout {
-  min-height: 100vh;
+/* Glassmorphism Classes */
+.glass-panel {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  border: none !important;
+  box-shadow: none !important;
+
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::after {
+  display: none;
+}
+.glass-panel:hover {
+  background: var(--glass-highlight);
+  border-color: var(--neon-accent);
+  box-shadow: 0 8px 32px 0 var(--card-shadow),
+              0 0 15px 0 var(--neon-glow);
+  transform: translateY(-4px);
+}
+
+.glass-panel:hover::after {
+  left: 100%;
+}
+
+
+/* Sidebar Customization */
+.ant-layout-sider {
+  background: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--glass-border);
+  transition: all 0.3s ease !important;
+}
+
+.ant-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-menu-item {
+  border-radius: 8px !important;
+  margin: 8px !important;
+  color: var(--text-muted) !important;
+}
+
+.ant-menu-item-selected {
+  background: var(--glass-highlight) !important;
+  color: var(--neon-accent) !important;
+}
+
+.ant-menu-item:hover {
+  color: var(--neon-accent) !important;
 }
 
 .logo {
-  height: 32px;
-  margin: 16px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
+  height: 64px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
+  padding: 0 24px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--neon-accent);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 16px;
 }
 
-.site-layout .site-layout-background {
-  background: #fff;
+.logo span {
+  margin-left: 8px;
+  color: var(--text-main);
 }
 
-.stat-card {
-  text-align: center;
+/* Header Customization */
+.ant-layout-header {
+  background: var(--bg-header) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 0 24px !important;
+  transition: all 0.3s ease !important;
 }
 
-.stat-card .ant-statistic-content {
-  font-size: 24px;
-  font-weight: bold;
+.header-title {
+  color: var(--text-main);
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.chart-container {
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+.header-title svg {
+  color: var(--neon-accent);
 }
 
-.log-table {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* Table Customization */
+.ant-table {
+  background: transparent !important;
+  color: var(--text-main) !important;
 }
 
-.page-header {
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+.ant-table-wrapper {
+  background: transparent !important;
 }
+
+.ant-table-thead > tr > th {
+  background: var(--glass-bg) !important;
+  color: var(--text-muted) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  font-size: 12px !important;
+  letter-spacing: 1px !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--glass-border) !important;
+  color: var(--text-main) !important;
+  padding: 16px !important;
+}
+
+.ant-table-row:hover > td {
+  background: var(--glass-highlight) !important;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 24px !important;
+}
+
+.ant-tabs-tab {
+  color: var(--text-muted) !important;
+  padding: 12px 0 !important;
+  font-weight: 500 !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--neon-accent) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--neon-accent) !important;
+  height: 2px !important;
+}
+
+/* Card Overrides */
+.ant-card {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-statistic-title {
+  color: var(--text-muted) !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  margin-bottom: 12px !important;
+}
+
+.ant-statistic-content {
+  color: var(--text-main) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.ant-spin {
+  color: var(--neon-accent) !important;
+}
+
+.ant-spin-dot-item {
+  background-color: var(--neon-accent) !important;
+}
+
+/* Layout Content */
+.ant-layout-content {
+  background: transparent !important;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-page);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-highlight);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--glass-border);
+}
+
+/* Tag/Status Styles */
+.status-tag {
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-tag-active {
+  background: rgba(0, 255, 65, 0.1);
+  color: var(--neon-accent);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+}
+
+[data-theme='light'] .status-tag-active {
+    background: rgba(255, 65, 54, 0.1);
+    color: var(--neon-accent);
+    border: 1px solid rgba(255, 65, 54, 0.2);
+}
+
+.status-tag-failed {
+  background: rgba(255, 65, 54, 0.1);
+  color: #ff4136;
+  border: 1px solid rgba(255, 65, 54, 0.2);
+}
+

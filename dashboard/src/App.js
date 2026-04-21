@@ -1,20 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Card, Row, Col, Statistic, Table, Typography, Tabs, Alert, Spin } from 'antd';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { SecurityScanOutlined, UserOutlined, KeyOutlined, CodeOutlined, DashboardOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Layout, Menu, Card, Row, Col, Statistic, Table, Typography, Tabs, Alert, Spin, Switch, Button } from 'antd';
+import { 
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, 
+  CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
+import { 
+  SecurityScanOutlined, 
+  UserOutlined, 
+  KeyOutlined, 
+  CodeOutlined, 
+  DashboardOutlined, 
+  FileTextOutlined,
+  GlobalOutlined,
+  ThunderboltOutlined,
+  ReloadOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined
+} from '@ant-design/icons';
 import axios from 'axios';
 import 'antd/dist/reset.css';
+import './index.css';
+import Background from './Background';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['#00ff41', '#00c49f', '#ffbb28', '#ff8042', '#8884d8'];
 
 function App() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activePage, setActivePage] = useState('dashboard');
+  const [rescanLoading, setRescanLoading] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem('hades-theme') || 'dark');
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('hades-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = (checked) => {
+    setTheme(checked ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -29,41 +58,71 @@ function App() {
       setLoading(false);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch dashboard data');
+      setError('Failed to fetch system telemetry');
       setLoading(false);
     }
   };
+
+  const handleRescan = () => {
+    setRescanLoading(true);
+    setTimeout(() => {
+      fetchDashboardData();
+      setRescanLoading(false);
+    }, 1500);
+  };
+
+  const isDark = theme === 'dark';
+  const themeAccent = isDark ? '#00ff41' : '#ff4136';
 
   const authColumns = [
     {
       title: 'Timestamp',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (text) => new Date(text).toLocaleString(),
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString()}</Text>,
+    },
+    {
+      title: 'Service',
+      dataIndex: 'service',
+      key: 'service',
+      render: (service) => (
+        <span 
+          className="status-tag status-tag-active" 
+          style={{ 
+            background: service?.toLowerCase() === 'ftp' ? 'rgba(255, 169, 64, 0.1)' : 'rgba(24, 144, 255, 0.1)', 
+            color: service?.toLowerCase() === 'ftp' ? '#ffa940' : (isDark ? '#1890ff' : '#096dd9'), 
+            border: service?.toLowerCase() === 'ftp' ? '1px solid rgba(255, 169, 64, 0.2)' : '1px solid rgba(24, 144, 255, 0.2)' 
+          }}
+        >
+          {service?.toUpperCase() || 'SSH'}
+        </span>
+      ),
     },
     {
       title: 'Source IP',
       dataIndex: 'src_ip',
       key: 'src_ip',
+      render: (text) => <Text style={{ color: 'var(--text-main)' }}>{text}</Text>
     },
     {
       title: 'Username',
       dataIndex: 'username',
       key: 'username',
+      render: (text) => <Text style={{ color: 'var(--text-main)' }}>{text}</Text>
     },
     {
       title: 'Password',
       dataIndex: 'password',
       key: 'password',
-      render: (text) => <Text code>{text.substring(0, 20)}...</Text>,
+      render: (text) => <Text code style={{ background: 'var(--glass-bg)', color: 'var(--text-muted)', border: 'none' }}>{text.substring(0, 20)}</Text>,
     },
     {
-      title: 'Success',
+      title: 'Status',
       dataIndex: 'success',
       key: 'success',
       render: (success) => (
-        <span style={{ color: success ? 'green' : 'red' }}>
-          {success ? 'Success' : 'Failed'}
+        <span className={`status-tag ${success ? 'status-tag-active' : 'status-tag-failed'}`}>
+          {success ? <><CheckCircleOutlined /> ALLOWED</> : <><CloseCircleOutlined /> DENIED</>}
         </span>
       ),
     },
@@ -74,72 +133,62 @@ function App() {
       title: 'Timestamp',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (text) => new Date(text).toLocaleString(),
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString()}</Text>,
     },
     {
       title: 'Session ID',
       dataIndex: 'session_id',
       key: 'session_id',
-      render: (text) => <Text code>{text.substring(0, 8)}...</Text>,
     },
     {
       title: 'Command',
       dataIndex: 'command',
       key: 'command',
-      render: (text) => <Text code>{text}</Text>,
+      render: (text) => <Text code style={{ background: isDark ? 'rgba(0,255,65,0.05)' : 'rgba(255,65,54,0.05)', color: 'var(--neon-accent)', border: 'none' }}>{text}</Text>,
     },
     {
-      title: 'Args',
+      title: 'Arguments',
       dataIndex: 'args',
       key: 'args',
-    },
-    {
-      title: 'Duration',
-      dataIndex: 'duration',
-      key: 'duration',
-      render: (duration) => `${duration?.toFixed(2)}s`,
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{text || '-'}</Text>,
     },
   ];
 
-  const sessionColumns = [
+  const dnsColumns = [
     {
-      title: 'Session ID',
-      dataIndex: 'session_id',
-      key: 'session_id',
-      render: (text) => <Text code>{text.substring(0, 8)}...</Text>,
-    },
-    {
-      title: 'Start Time',
-      dataIndex: 'start_time',
-      key: 'start_time',
-      render: (text) => new Date(text).toLocaleString(),
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString()}</Text>,
     },
     {
       title: 'Source IP',
       dataIndex: 'src_ip',
       key: 'src_ip',
+      render: (text) => <Text style={{ color: 'var(--text-main)' }}>{text}</Text>
     },
     {
-      title: 'Username',
-      dataIndex: 'username',
-      key: 'username',
+      title: 'Query Name',
+      dataIndex: 'query_name',
+      key: 'query_name',
+      render: (text) => <Text code style={{ background: 'var(--glass-bg)', color: 'var(--neon-accent)', border: 'none' }}>{text}</Text>,
     },
     {
-      title: 'Commands',
-      dataIndex: 'commands_count',
-      key: 'commands_count',
-    },
-    {
-      title: 'Duration',
-      dataIndex: 'duration',
-      key: 'duration',
-      render: (duration) => duration ? `${duration.toFixed(2)}s` : 'Active',
+      title: 'Type',
+      dataIndex: 'query_type',
+      key: 'query_type',
+      render: (text) => (
+        <span className="status-tag status-tag-active" style={{ background: 'rgba(114, 46, 209, 0.1)', color: '#722ed1', border: '1px solid rgba(114, 46, 209, 0.2)' }}>
+          {text}
+        </span>
+      ),
     },
   ];
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-page)' }}>
+        <Background theme={theme} />
         <Spin size="large" />
       </div>
     );
@@ -147,217 +196,267 @@ function App() {
 
   if (error) {
     return (
-      <div style={{ padding: '50px' }}>
-        <Alert message="Error" description={error} type="error" showIcon />
+      <div style={{ padding: '50px', background: 'var(--bg-page)', minHeight: '100vh' }}>
+        <Background theme={theme} />
+        <Alert message="System Error" description={error} type="error" showIcon />
       </div>
     );
   }
 
-  const { summary, top_source_ips, top_usernames, top_passwords, top_commands, daily_attempts, recent_auth, recent_commands, recent_sessions } = dashboardData;
+  const { 
+    summary, 
+    top_source_ips, 
+    top_usernames, 
+    top_passwords, 
+    top_commands, 
+    top_dns_queries,
+    daily_attempts, 
+    recent_auth, 
+    recent_commands, 
+    recent_sessions,
+    recent_dns
+  } = dashboardData;
+
+  const renderDashboard = () => {
+    const renderIntegratedChart = (title, data, dataKey, nameKey) => (
+      <Col span={8}>
+        <div className="glass-panel" style={{ padding: '20px 24px' }}>
+          <Title level={5} style={{ color: 'var(--text-main)', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1.5, fontSize: 14 }}>{title}</Title>
+          <div style={{ display: 'flex', alignItems: 'center', height: 180 }}>
+            <div style={{ flex: 1.4, height: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data.slice(0, 5)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={8}
+                    dataKey={dataKey}
+                    stroke="none"
+                  >
+                    {data.slice(0, 5).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: isDark ? 'rgba(20, 20, 25, 0.95)' : 'rgba(255, 255, 255, 0.95)', 
+                      border: '1px solid var(--glass-border)', 
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                    }}
+                    itemStyle={{ color: 'var(--text-main)', fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ flex: 1, paddingLeft: 16, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: '1px solid var(--glass-border)' }}>
+              {data.slice(0, 5).map((entry, index) => (
+                <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '2px', background: COLORS[index % COLORS.length], marginRight: 10, flexShrink: 0 }} />
+                    <Text ellipsis title={entry[nameKey]} style={{ color: 'var(--text-muted)', fontSize: 11, maxWidth: 65, fontWeight: 500 }}>
+                      {entry[nameKey]}
+                    </Text>
+                  </div>
+                  <Text style={{ color: 'var(--neon-accent)', fontWeight: 700, fontSize: 13, fontFamily: 'Source Code Pro' }}>
+                    {entry[dataKey]}
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Col>
+    );
+
+    return (
+      <>
+        <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+          <Col span={6}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Statistic
+                title="Total Incursions"
+                value={summary.total_auth_attempts}
+                prefix={<SecurityScanOutlined />}
+              />
+            </div>
+          </Col>
+          <Col span={6}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Statistic
+                title="Breaches Detected"
+                value={summary.successful_logins}
+                prefix={<UserOutlined />}
+                valueStyle={{ color: 'var(--neon-accent)' }}
+              />
+            </div>
+          </Col>
+          <Col span={6}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Statistic
+                title="Deflected Attacks"
+                value={summary.failed_logins}
+                prefix={<KeyOutlined />}
+                valueStyle={{ color: '#ff4136' }}
+              />
+            </div>
+          </Col>
+          <Col span={6}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Statistic
+                title="DNS Queries Intercepted"
+                value={summary.total_dns_queries || 0}
+                prefix={<GlobalOutlined />}
+                valueStyle={{ color: '#eb2f96' }}
+              />
+            </div>
+          </Col>
+        </Row>
+
+        <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+          <Col span={16}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Title level={5} style={{ color: 'var(--text-main)', marginBottom: 24, textTransform: 'uppercase', letterSpacing: 1.5 }}>Traffic Velocity</Title>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={daily_attempts.slice(0, 10).reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+                  <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ background: isDark ? 'rgba(13, 13, 15, 0.9)' : 'rgba(255, 255, 255, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
+                    itemStyle={{ color: 'var(--neon-accent)' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="count" 
+                    stroke="var(--neon-accent)" 
+                    strokeWidth={3} 
+                    dot={{ r: 4, fill: 'var(--neon-accent)', strokeWidth: 2, stroke: 'var(--bg-page)' }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Col>
+          <Col span={8}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Title level={5} style={{ color: 'var(--text-main)', marginBottom: 24, textTransform: 'uppercase', letterSpacing: 1.5 }}>Threat Origin</Title>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={top_source_ips.slice(0, 5)} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="src_ip" type="category" stroke="var(--text-muted)" fontSize={10} width={100} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    cursor={{ fill: 'var(--glass-bg)' }}
+                    contentStyle={{ background: isDark ? 'rgba(13, 13, 15, 0.9)' : 'rgba(255, 255, 255, 0.9)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="count" fill="var(--neon-accent)" radius={[0, 4, 4, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Col>
+        </Row>
+
+        <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+          {renderIntegratedChart('Top Usernames', top_usernames, 'count', 'username')}
+          {renderIntegratedChart('Top Passwords', top_passwords, 'count', 'password')}
+          {renderIntegratedChart('Top Commands', top_commands, 'count', 'command')}
+        </Row>
+
+        <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+          {renderIntegratedChart('Top DNS Queries', top_dns_queries, 'count', 'query_name')}
+        </Row>
+      </>
+    );
+  };
+
+  const renderIntelLogs = () => (
+    <div className="glass-panel" style={{ padding: 24 }}>
+      <Tabs defaultActiveKey="1" className="custom-tabs">
+        <TabPane tab={<span style={{ color: 'var(--text-main)' }}><SecurityScanOutlined /> Authentication Intel</span>} key="1">
+          <Table
+            columns={authColumns}
+            dataSource={recent_auth}
+            rowKey="id"
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: true }}
+          />
+        </TabPane>
+        <TabPane tab={<span style={{ color: 'var(--text-main)' }}><CodeOutlined /> Executed Commands</span>} key="2">
+          <Table
+            columns={commandColumns}
+            dataSource={recent_commands}
+            rowKey="id"
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: true }}
+          />
+        </TabPane>
+        <TabPane tab={<span style={{ color: 'var(--text-main)' }}><GlobalOutlined /> DNS Query Intel</span>} key="3">
+          <Table
+            columns={dnsColumns}
+            dataSource={recent_dns}
+            rowKey="id"
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: true }}
+          />
+        </TabPane>
+      </Tabs>
+    </div>
+  );
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        breakpoint="lg"
-        collapsedWidth="0"
-        onBreakpoint={(broken) => { }}
-        onCollapse={(collapsed, type) => { }}
-      >
+    <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
+      <Background theme={theme} />
+      <Sider width={260} breakpoint="lg" collapsedWidth="0" style={{ background: 'var(--bg-sidebar) !important', backdropFilter: 'blur(10px)' }}>
         <div className="logo">
-          <SecurityScanOutlined /> HADES
+          <SecurityScanOutlined /> <span>HADES</span>
         </div>
-        <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
-          <Menu.Item key="1" icon={<DashboardOutlined />}>
-            Dashboard
+        <Menu 
+          theme={isDark ? "dark" : "light"} 
+          mode="inline" 
+          selectedKeys={[activePage]}
+          onClick={({ key }) => setActivePage(key)}
+          style={{ background: 'transparent' }}
+        >
+          <Menu.Item key="dashboard" icon={<DashboardOutlined />}>
+            Operations Center
           </Menu.Item>
-          <Menu.Item key="2" icon={<FileTextOutlined />}>
-            Logs
+          <Menu.Item key="intel" icon={<FileTextOutlined />}>
+            Intel Logs
+          </Menu.Item>
+          <Menu.Item key="mesh" icon={<GlobalOutlined />} disabled>
+            Network Mesh
           </Menu.Item>
         </Menu>
       </Sider>
-      <Layout>
-        <Header style={{ padding: '0 16px', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <Title level={3} style={{ margin: '16px 0' }}>
-            SSH Honeypot Dashboard
-          </Title>
-        </Header>
-        <Content style={{ margin: '24px 16px 0' }}>
-          <div className="site-layout-background" style={{ padding: 24, minHeight: 360 }}>
-
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-              <Col span={6}>
-                <Card>
-                  <Statistic
-                    title="Total Auth Attempts"
-                    value={summary.total_auth_attempts}
-                    prefix={<SecurityScanOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Card>
-              </Col>
-              <Col span={6}>
-                <Card>
-                  <Statistic
-                    title="Successful Logins"
-                    value={summary.successful_logins}
-                    prefix={<UserOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </Card>
-              </Col>
-              <Col span={6}>
-                <Card>
-                  <Statistic
-                    title="Failed Logins"
-                    value={summary.failed_logins}
-                    prefix={<KeyOutlined />}
-                    valueStyle={{ color: '#f5222d' }}
-                  />
-                </Card>
-              </Col>
-              <Col span={6}>
-                <Card>
-                  <Statistic
-                    title="Total Sessions"
-                    value={summary.total_sessions}
-                    prefix={<CodeOutlined />}
-                    valueStyle={{ color: '#722ed1' }}
-                  />
-                </Card>
-              </Col>
-            </Row>
-
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-              <Col span={12}>
-                <div className="chart-container">
-                  <Title level={4}>Daily Attack Trends</Title>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={daily_attempts.slice(0, 7).reverse()}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-              <Col span={12}>
-                <div className="chart-container">
-                  <Title level={4}>Top Source IPs</Title>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={top_source_ips.slice(0, 5)}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="src_ip" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-            </Row>
-
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-              <Col span={8}>
-                <div className="chart-container">
-                  <Title level={4}>Top Usernames</Title>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={top_usernames.slice(0, 5)}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ username, percent }) => `${username} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="count"
-                      >
-                        {top_usernames.slice(0, 5).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-              <Col span={8}>
-                <div className="chart-container">
-                  <Title level={4}>Top Passwords</Title>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={top_passwords.slice(0, 5)} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis dataKey="password" type="category" width={80} />
-                      <Tooltip />
-                      <Bar dataKey="count" fill="#ffc658" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-              <Col span={8}>
-                <div className="chart-container">
-                  <Title level={4}>Top Commands</Title>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={top_commands.slice(0, 5)}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ command, percent }) => `${command} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="count"
-                      >
-                        {top_commands.slice(0, 5).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-            </Row>
-
-            <div className="log-table">
-              <Title level={4}>Recent Activity</Title>
-              <Tabs defaultActiveKey="1">
-                <TabPane tab="Authentication Logs" key="1">
-                  <Table
-                    columns={authColumns}
-                    dataSource={recent_auth}
-                    rowKey="id"
-                    pagination={{ pageSize: 10 }}
-                    scroll={{ x: true }}
-                  />
-                </TabPane>
-                <TabPane tab="Command Logs" key="2">
-                  <Table
-                    columns={commandColumns}
-                    dataSource={recent_commands}
-                    rowKey="id"
-                    pagination={{ pageSize: 10 }}
-                    scroll={{ x: true }}
-                  />
-                </TabPane>
-                <TabPane tab="Sessions" key="3">
-                  <Table
-                    columns={sessionColumns}
-                    dataSource={recent_sessions}
-                    rowKey="session_id"
-                    pagination={{ pageSize: 10 }}
-                    scroll={{ x: true }}
-                  />
-                </TabPane>
-              </Tabs>
-            </div>
-
+      
+      <Layout style={{ background: 'transparent' }}>
+        <Header style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-header) !important' }}>
+          <div className="header-title">
+            <ThunderboltOutlined /> COMMAND & CONTROL
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Text style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>MODE</Text>
+              <Switch checked={isDark} onChange={toggleTheme} size="small" style={{ background: 'var(--glass-border)' }} />
+            </div>
+            <Button 
+              type="primary" 
+              ghost 
+              icon={<ReloadOutlined spin={rescanLoading} />} 
+              onClick={handleRescan}
+              style={{ borderColor: 'var(--glass-border)', color: 'var(--neon-accent)', borderRadius: 8 }}
+            >
+              RESCAN
+            </Button>
+          </div>
+        </Header>
+        
+        <Content style={{ padding: '32px 24px', overflowY: 'auto' }}>
+          {activePage === 'dashboard' ? renderDashboard() : renderIntelLogs()}
         </Content>
       </Layout>
     </Layout>

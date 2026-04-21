@@ -54,6 +54,7 @@ desktop.ini
 *.sqlite
 *.sqlite3
 honeypot.db
+database.py
 
 # Logs
 logs/
@@ -63,3 +64,5 @@ logs/
 DesignDoc@HADES.md
 SRS@HADES.md
 # data/
+
+node_modules/

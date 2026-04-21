@@ -52,6 +52,18 @@ class HoneypotDatabase:
             )
         ''')
         
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS dns_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                src_ip TEXT NOT NULL,
+                src_port INTEGER NOT NULL,
+                query_name TEXT NOT NULL,
+                query_type TEXT NOT NULL,
+                record_class TEXT
+            )
+        ''')
+        
         conn.commit()
         conn.close()
     
@@ -96,6 +108,19 @@ class HoneypotDatabase:
         
         conn.commit()
         conn.close()
+
+    def log_dns_query(self, src_ip, src_port, query_name, query_type, record_class='IN'):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO dns_logs 
+            (timestamp, src_ip, src_port, query_name, query_type, record_class)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (datetime.now().isoformat(), src_ip, src_port, query_name, query_type, record_class))
+        
+        conn.commit()
+        conn.close()
     
     def end_session(self, session_id):
         conn = sqlite3.connect(self.db_path)
@@ -133,6 +158,22 @@ class HoneypotDatabase:
         
         cursor.execute('''
             SELECT * FROM command_events 
+            ORDER BY timestamp DESC 
+            LIMIT ? OFFSET ?
+        ''', (limit, offset))
+        
+        columns = [desc[0] for desc in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        conn.close()
+        return results
+
+    def get_dns_logs(self, limit=100, offset=0):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT * FROM dns_logs 
             ORDER BY timestamp DESC 
             LIMIT ? OFFSET ?
         ''', (limit, offset))
@@ -188,6 +229,16 @@ class HoneypotDatabase:
         
         cursor.execute('SELECT DATE(timestamp) as date, COUNT(*) as count FROM authentication_events GROUP BY DATE(timestamp) ORDER BY date DESC LIMIT 30')
         analytics['daily_attempts'] = [dict(zip(['date', 'count'], row)) for row in cursor.fetchall()]
+        
+        # DNS Analytics
+        cursor.execute('SELECT COUNT(*) FROM dns_logs')
+        analytics['total_dns_queries'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT query_name, COUNT(*) as count FROM dns_logs GROUP BY query_name ORDER BY count DESC LIMIT 10')
+        analytics['top_dns_queries'] = [dict(zip(['query_name', 'count'], row)) for row in cursor.fetchall()]
+        
+        cursor.execute('SELECT query_type, COUNT(*) as count FROM dns_logs GROUP BY query_type ORDER BY count DESC')
+        analytics['dns_type_breakdown'] = [dict(zip(['query_type', 'count'], row)) for row in cursor.fetchall()]
         
         conn.close()
         return analytics

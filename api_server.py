@@ -38,6 +38,16 @@ def get_command_logs():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/dns-logs', methods=['GET'])
+def get_dns_logs():
+    try:
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        logs = db.get_dns_logs(limit, offset)
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/sessions', methods=['GET'])
 def get_sessions():
     try:
@@ -56,22 +66,27 @@ def get_dashboard_data():
         recent_auth = db.get_authentication_logs(10)
         recent_commands = db.get_command_logs(10)
         recent_sessions = db.get_sessions(10)
+        recent_dns = db.get_dns_logs(10)
         
         dashboard_data = {
             'summary': {
                 'total_auth_attempts': analytics.get('total_auth_attempts', 0),
                 'successful_logins': analytics.get('successful_logins', 0),
                 'failed_logins': analytics.get('total_auth_attempts', 0) - analytics.get('successful_logins', 0),
-                'total_sessions': analytics.get('successful_logins', 0)
+                'total_sessions': analytics.get('successful_logins', 0),
+                'total_dns_queries': analytics.get('total_dns_queries', 0)
             },
             'top_source_ips': analytics.get('top_source_ips', []),
             'top_usernames': analytics.get('top_usernames', []),
             'top_passwords': analytics.get('top_passwords', []),
             'top_commands': analytics.get('top_commands', []),
+            'top_dns_queries': analytics.get('top_dns_queries', []),
+            'dns_type_breakdown': analytics.get('dns_type_breakdown', []),
             'daily_attempts': analytics.get('daily_attempts', []),
             'recent_auth': recent_auth,
             'recent_commands': recent_commands,
-            'recent_sessions': recent_sessions
+            'recent_sessions': recent_sessions,
+            'recent_dns': recent_dns
         }
         
         return jsonify(dashboard_data)

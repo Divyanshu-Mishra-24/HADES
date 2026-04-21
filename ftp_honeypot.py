@@ -74,7 +74,9 @@ class FTPHoneypot:
                         elif cmd == 'PORT':
                             conn.sendall(b"502 Command not implemented.\r\n")
                         elif cmd == 'LIST':
-                            conn.sendall(b"150 Here comes the directory listing.\r\n226 Directory send OK.\r\n") # Empty dir 
+                            conn.sendall(
+                                b"425 Can't open data connection.\r\n"
+                            ) # Empty dir 
                         else:
                             conn.sendall(b"500 Unknown command.\r\n")
                         

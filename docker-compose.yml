@@ -8,6 +8,7 @@ services:
       - "2222:2222" # SSH Honeypot
       - "2121:2121" # FTP Honeypot
       - "5000:5000" # API Server
+      - "5354:5354/udp" # DNS Honeypot
     volumes:
       - ./data:/app/data
       - ./honeypot.db:/app/honeypot.db
@@ -24,6 +25,9 @@ services:
     container_name: hades-dashboard
     ports:
       - "3000:3000"
+    volumes:
+      - ./dashboard:/app
+      - /app/node_modules
     depends_on:
       - multi-honeypot
     environment:
