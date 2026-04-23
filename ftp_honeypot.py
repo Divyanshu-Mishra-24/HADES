@@ -60,29 +60,35 @@ class FTPHoneypot:
                     else:
                         start_time = time.time()
                         # Handle basic authenticated commands
+                        output = ""
                         if cmd == 'SYST':
-                            conn.sendall(b"215 UNIX Type: L8\r\n")
+                            output = "215 UNIX Type: L8\r\n"
+                            conn.sendall(output.encode())
                         elif cmd == 'FEAT':
-                            conn.sendall(b"211-Features:\r\n EPRT\r\n EPSV\r\n MDTM\r\n PASV\r\n REST STREAM\r\n SIZE\r\n TVFS\r\n211 End\r\n")
+                            output = "211-Features:\r\n EPRT\r\n EPSV\r\n MDTM\r\n PASV\r\n REST STREAM\r\n SIZE\r\n TVFS\r\n211 End\r\n"
+                            conn.sendall(output.encode())
                         elif cmd == 'PWD':
-                            conn.sendall(b"257 \"/\" is the current directory\r\n")
+                            output = "257 \"/\" is the current directory\r\n"
+                            conn.sendall(output.encode())
                         elif cmd == 'TYPE':
-                            conn.sendall(f"200 Switching to {args} mode.\r\n".encode())
+                            output = f"200 Switching to {args} mode.\r\n"
+                            conn.sendall(output.encode())
                         elif cmd == 'PASV':
-                            # Simply reject PASV/PORT for this basic honeypot and see what they tried to do
-                            conn.sendall(b"502 Command not implemented.\r\n")
+                            output = "502 Command not implemented.\r\n"
+                            conn.sendall(output.encode())
                         elif cmd == 'PORT':
-                            conn.sendall(b"502 Command not implemented.\r\n")
+                            output = "502 Command not implemented.\r\n"
+                            conn.sendall(output.encode())
                         elif cmd == 'LIST':
-                            conn.sendall(
-                                b"425 Can't open data connection.\r\n"
-                            ) # Empty dir 
+                            output = "425 Can't open data connection.\r\n"
+                            conn.sendall(output.encode())
                         else:
-                            conn.sendall(b"500 Unknown command.\r\n")
+                            output = "500 Unknown command.\r\n"
+                            conn.sendall(output.encode())
                         
                         duration = time.time() - start_time
                         if session_id:
-                            self.database.log_command(session_id, cmd, args, duration, success=True)
+                            self.database.log_command(session_id, cmd, args, output.strip(), duration, success=True)
                             
         except Exception as e:
             logging.error(f"Error handling FTP client {client_ip}:{client_port} - {e}")

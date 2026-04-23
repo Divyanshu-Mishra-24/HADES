@@ -5,6 +5,7 @@ from ssh_honeypot import HoneypotServer as SSHHoneypotServer
 from ftp_honeypot import FTPHoneypot
 from telnet_honeypot import TelnetHoneypot
 from dns_honeypot import DNSHoneypot
+from http_honeypot import HTTPHoneypot
 
 def start_ssh():
     ssh_server = SSHHoneypotServer(host='0.0.0.0', port=2222)
@@ -22,9 +23,12 @@ def start_telnet():
     telnet_server.start()
 
 def start_dns():
-    # Port 53 requires root/admin privileges. Defaulting to 5354.
     dns_server = DNSHoneypot(host='0.0.0.0', port=5354)
     dns_server.start()
+
+def start_http():
+    http_server = HTTPHoneypot(host='0.0.0.0', port=8081)
+    http_server.start()
 
 if __name__ == '__main__':
     logging.basicConfig(
@@ -37,11 +41,13 @@ if __name__ == '__main__':
     ftp_thread    = threading.Thread(target=start_ftp,    daemon=True)
     telnet_thread = threading.Thread(target=start_telnet, daemon=True)
     dns_thread    = threading.Thread(target=start_dns,    daemon=True)
+    http_thread   = threading.Thread(target=start_http,   daemon=True)
 
     ssh_thread.start()
     ftp_thread.start()
     telnet_thread.start()
     dns_thread.start()
+    http_thread.start()
 
     try:
         while True:

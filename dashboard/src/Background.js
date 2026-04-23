@@ -116,8 +116,9 @@ const Background = ({ theme }) => {
     let holdDuration = 6000;
     let lastStateChange = startTime;
 
+    let frameId;
     const animate = () => {
-      requestAnimationFrame(animate);
+      frameId = requestAnimationFrame(animate);
       const now = Date.now();
       const elapsed = now - lastStateChange;
 
@@ -191,7 +192,14 @@ const Background = ({ theme }) => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      renderer.dispose();
+      cancelAnimationFrame(frameId);
+      if (renderer) {
+        renderer.dispose();
+        renderer.forceContextLoss();
+        renderer.domElement = null;
+      }
+      particlesGeometry.dispose();
+      particlesMaterial.dispose();
     };
   }, []);
 

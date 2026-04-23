@@ -15,12 +15,14 @@ import {
   ThunderboltOutlined,
   ReloadOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import 'antd/dist/reset.css';
 import './index.css';
 import Background from './Background';
+import NetworkMesh from './NetworkMesh';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -79,7 +81,7 @@ function App() {
       title: 'Timestamp',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString()}</Text>,
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</Text>,
     },
     {
       title: 'Service',
@@ -133,7 +135,7 @@ function App() {
       title: 'Timestamp',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString()}</Text>,
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</Text>,
     },
     {
       title: 'Session ID',
@@ -159,7 +161,7 @@ function App() {
       title: 'Timestamp',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString()}</Text>,
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</Text>,
     },
     {
       title: 'Source IP',
@@ -182,6 +184,43 @@ function App() {
           {text}
         </span>
       ),
+    },
+  ];
+
+  const httpColumns = [
+    {
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</Text>,
+    },
+    {
+      title: 'Source IP',
+      dataIndex: 'src_ip',
+      key: 'src_ip',
+      render: (text) => <Text style={{ color: 'var(--text-main)' }}>{text}</Text>
+    },
+    {
+      title: 'Method',
+      dataIndex: 'method',
+      key: 'method',
+      render: (text) => (
+        <span className="status-tag status-tag-active" style={{ background: 'rgba(255, 65, 54, 0.1)', color: '#ff4136', border: '1px solid rgba(255, 65, 54, 0.2)' }}>
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: 'Path',
+      dataIndex: 'path',
+      key: 'path',
+      render: (text) => <Text code style={{ background: 'var(--glass-bg)', color: 'var(--neon-accent)', border: 'none' }}>{text}</Text>,
+    },
+    {
+      title: 'User Agent',
+      dataIndex: 'user_agent',
+      key: 'user_agent',
+      render: (text) => <Text style={{ color: 'var(--text-muted)', fontSize: 11 }}>{text?.substring(0, 40)}...</Text>,
     },
   ];
 
@@ -214,7 +253,9 @@ function App() {
     recent_auth, 
     recent_commands, 
     recent_sessions,
-    recent_dns
+    recent_dns,
+    recent_http,
+    top_http_paths
   } = dashboardData;
 
   const renderDashboard = () => {
@@ -275,7 +316,7 @@ function App() {
     return (
       <>
         <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-          <Col span={6}>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 20%', maxWidth: '20%' }}>
             <div className="glass-panel" style={{ padding: 24 }}>
               <Statistic
                 title="Total Incursions"
@@ -284,7 +325,7 @@ function App() {
               />
             </div>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 20%', maxWidth: '20%' }}>
             <div className="glass-panel" style={{ padding: 24 }}>
               <Statistic
                 title="Breaches Detected"
@@ -294,7 +335,7 @@ function App() {
               />
             </div>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 20%', maxWidth: '20%' }}>
             <div className="glass-panel" style={{ padding: 24 }}>
               <Statistic
                 title="Deflected Attacks"
@@ -304,13 +345,23 @@ function App() {
               />
             </div>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 20%', maxWidth: '20%' }}>
             <div className="glass-panel" style={{ padding: 24 }}>
               <Statistic
                 title="DNS Queries Intercepted"
                 value={summary.total_dns_queries || 0}
+                prefix={<SearchOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </div>
+          </Col>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 20%', maxWidth: '20%' }}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Statistic
+                title="HTTP Requests Deflected"
+                value={summary.total_http_requests || 0}
                 prefix={<GlobalOutlined />}
-                valueStyle={{ color: '#eb2f96' }}
+                valueStyle={{ color: '#722ed1' }}
               />
             </div>
           </Col>
@@ -368,6 +419,12 @@ function App() {
 
         <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
           {renderIntegratedChart('Top DNS Queries', top_dns_queries, 'count', 'query_name')}
+          {renderIntegratedChart('Top HTTP Paths', top_http_paths, 'count', 'path')}
+          <Col span={8}>
+            <div className="glass-panel" style={{ height: 264, padding: 0, overflow: 'hidden', position: 'relative' }}>
+              <NetworkMesh data={dashboardData} theme={theme} compact={true} showGraph={true} showList={false} />
+            </div>
+          </Col>
         </Row>
       </>
     );
@@ -403,7 +460,22 @@ function App() {
             scroll={{ x: true }}
           />
         </TabPane>
+        <TabPane tab={<span style={{ color: 'var(--text-main)' }}><GlobalOutlined /> HTTP Attack Intel</span>} key="4">
+          <Table
+            columns={httpColumns}
+            dataSource={recent_http}
+            rowKey="id"
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: true }}
+          />
+        </TabPane>
       </Tabs>
+    </div>
+  );
+
+  const renderNetworkMesh = () => (
+    <div style={{ padding: '0 20px' }}>
+      <NetworkMesh data={dashboardData} theme={theme} showGraph={false} showList={true} />
     </div>
   );
 
@@ -427,7 +499,7 @@ function App() {
           <Menu.Item key="intel" icon={<FileTextOutlined />}>
             Intel Logs
           </Menu.Item>
-          <Menu.Item key="mesh" icon={<GlobalOutlined />} disabled>
+          <Menu.Item key="mesh" icon={<GlobalOutlined />}>
             Network Mesh
           </Menu.Item>
         </Menu>
@@ -456,7 +528,9 @@ function App() {
         </Header>
         
         <Content style={{ padding: '32px 24px', overflowY: 'auto' }}>
-          {activePage === 'dashboard' ? renderDashboard() : renderIntelLogs()}
+          {activePage === 'dashboard' ? renderDashboard() : 
+           activePage === 'intel' ? renderIntelLogs() : 
+           renderNetworkMesh()}
         </Content>
       </Layout>
     </Layout>
