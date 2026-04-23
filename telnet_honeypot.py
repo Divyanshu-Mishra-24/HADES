@@ -138,62 +138,56 @@ class TelnetHoneypot:
                 args    = parts[1] if len(parts) > 1 else ""
 
                 start = time.time()
+                output = ""
 
                 if cmd in ('exit', 'logout', 'quit'):
-                    self._send(conn, b"logout\r\n")
+                    output = "logout\r\n"
+                    self._send(conn, output.encode())
                     break
                 elif cmd == 'whoami':
-                    self._send(conn, username.encode() + b"\r\n")
+                    output = username + "\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'id':
-                    self._send(conn,
-                        f"uid=1000({username}) gid=1000({username}) "
-                        f"groups=1000({username}),27(sudo)\r\n".encode()
-                    )
+                    output = f"uid=1000({username}) gid=1000({username}) groups=1000({username}),27(sudo)\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'pwd':
-                    self._send(conn, f"/home/{username}\r\n".encode())
+                    output = f"/home/{username}\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'hostname':
-                    self._send(conn, b"debian-server\r\n")
+                    output = "debian-server\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'uname':
-                    self._send(conn,
-                        b"Linux debian-server 5.10.0-21-amd64 #1 SMP Debian "
-                        b"5.10.162-1 x86_64 GNU/Linux\r\n"
-                    )
+                    output = "Linux debian-server 5.10.0-21-amd64 #1 SMP Debian 5.10.162-1 x86_64 GNU/Linux\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'ls':
+                    output = fake_ls.decode('utf-8', errors='ignore')
                     self._send(conn, fake_ls)
                 elif cmd == 'cat':
                     if args in ('/etc/passwd', 'passwd'):
-                        self._send(conn,
-                            b"root:x:0:0:root:/root:/bin/bash\r\n"
-                            b"daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\r\n"
-                            + username.encode() + b":x:1000:1000::/home/"
-                            + username.encode() + b":/bin/bash\r\n"
-                        )
+                        output = "root:x:0:0:root:/root:/bin/bash\r\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\r\n" + username + ":x:1000:1000::/home/" + username + ":/bin/bash\r\n"
+                        self._send(conn, output.encode())
                     else:
-                        self._send(conn,
-                            f"cat: {args}: No such file or directory\r\n".encode()
-                        )
+                        output = f"cat: {args}: No such file or directory\r\n"
+                        self._send(conn, output.encode())
                 elif cmd == 'echo':
-                    self._send(conn, args.encode() + b"\r\n")
+                    output = args + "\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'ifconfig' or cmd == 'ip':
-                    self._send(conn,
-                        b"eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\r\n"
-                        b"        inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255\r\n"
-                    )
+                    output = "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\r\n        inet 10.0.2.15  netmask 255.255.255.0  broadcast 10.0.2.255\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == 'history':
-                    self._send(conn,
-                        b"    1  ls\r\n    2  pwd\r\n    3  whoami\r\n    4  history\r\n"
-                    )
+                    output = "    1  ls\r\n    2  pwd\r\n    3  whoami\r\n    4  history\r\n"
+                    self._send(conn, output.encode())
                 elif cmd == '':
                     pass  # blank line — just re-show prompt
                 else:
-                    self._send(conn,
-                        f"-bash: {cmd}: command not found\r\n".encode()
-                    )
+                    output = f"-bash: {cmd}: command not found\r\n"
+                    self._send(conn, output.encode())
 
                 duration = time.time() - start
                 if session_id:
                     self.database.log_command(
-                        session_id, cmd, args, duration, success=True
+                        session_id, cmd, args, output.strip(), duration, success=True
                     )
 
         except Exception as e:

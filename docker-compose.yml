@@ -9,6 +9,7 @@ services:
       - "2121:2121" # FTP Honeypot
       - "5000:5000" # API Server
       - "5354:5354/udp" # DNS Honeypot
+      - "8081:8081"   # HTTP Honeypot 
     volumes:
       - ./data:/app/data
       - ./honeypot.db:/app/honeypot.db

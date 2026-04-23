@@ -88,7 +88,7 @@ class FakeShell:
                         
                         if command_line:
                             start_time = time.time()
-                            self.process_command(command_line)
+                            output = self.process_command(command_line)
                             duration = time.time() - start_time
                             
                             parts = command_line.split()
@@ -99,6 +99,7 @@ class FakeShell:
                                 self.session_id, 
                                 command, 
                                 args, 
+                                output,
                                 duration, 
                                 success=True
                             )
@@ -117,81 +118,96 @@ class FakeShell:
     def process_command(self, command_line):
         parts = command_line.split()
         command = parts[0].lower() if parts else ""
+        output = ""
         
         if command == 'ls':
-            self.channel.send("Desktop  Documents  Downloads  Music  Pictures  Videos\r\n")
-            self.channel.send("file.txt  important.doc  backup.zip\r\n")
+            output = "Desktop  Documents  Downloads  Music  Pictures  Videos\r\nfile.txt  important.doc  backup.zip\r\n"
+            self.channel.send(output)
             
         elif command == 'pwd':
-            self.channel.send("/home/user\r\n")
+            output = "/home/user\r\n"
+            self.channel.send(output)
             
         elif command == 'whoami':
-            self.channel.send("user\r\n")
+            output = "user\r\n"
+            self.channel.send(output)
             
         elif command == 'id':
-            self.channel.send("uid=1000(user) gid=1000(user) groups=1000(user),4(adm),24(cdrom),27(sudo)\r\n")
+            output = "uid=1000(user) gid=1000(user) groups=1000(user),4(adm),24(cdrom),27(sudo)\r\n"
+            self.channel.send(output)
             
         elif command == 'uname':
             args = parts[1] if len(parts) > 1 else ""
             if args == '-a':
-                self.channel.send("Linux ubuntu 5.15.0-52-generic #58-Ubuntu SMP Thu Oct 13 08:03:55 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux\r\n")
+                output = "Linux ubuntu 5.15.0-52-generic #58-Ubuntu SMP Thu Oct 13 08:03:55 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux\r\n"
             else:
-                self.channel.send("Linux\r\n")
+                output = "Linux\r\n"
+            self.channel.send(output)
                 
         elif command == 'cat':
             if len(parts) > 1:
                 filename = parts[1]
                 if filename == 'file.txt':
-                    self.channel.send("This is a sample file content.\r\n")
+                    output = "This is a sample file content.\r\n"
                 elif filename == 'important.doc':
-                    self.channel.send("Important document content here.\r\n")
+                    output = "Important document content here.\r\n"
                 else:
-                    self.channel.send(f"cat: {filename}: No such file or directory\r\n")
+                    output = f"cat: {filename}: No such file or directory\r\n"
             else:
-                self.channel.send("cat: missing file operand\r\n")
+                output = "cat: missing file operand\r\n"
+            self.channel.send(output)
                 
         elif command == 'ps':
-            self.channel.send("  PID TTY          TIME CMD\r\n")
-            self.channel.send(" 1234 pts/0    00:00:01 bash\r\n")
-            self.channel.send(" 5678 pts/0    00:00:00 ps\r\n")
+            output = "  PID TTY          TIME CMD\r\n 1234 pts/0    00:00:01 bash\r\n 5678 pts/0    00:00:00 ps\r\n"
+            self.channel.send(output)
             
         elif command == 'netstat':
-            self.channel.send("Active Internet connections (servers and established)\r\n")
-            self.channel.send("tcp        0      0 0.0.0.0:22            0.0.0.0:*               LISTEN\r\n")
-            self.channel.send("tcp        0      0 127.0.0.1:3306         0.0.0.0:*               LISTEN\r\n")
+            output = "Active Internet connections (servers and established)\r\ntcp        0      0 0.0.0.0:22            0.0.0.0:*               LISTEN\r\ntcp        0      0 127.0.0.1:3306         0.0.0.0:*               LISTEN\r\n"
+            self.channel.send(output)
             
         elif command == 'exit' or command == 'logout':
-            self.channel.send("logout\r\n")
+            output = "logout\r\n"
+            self.channel.send(output)
             self.running = False
             
         elif command == 'sudo':
-            self.channel.send("[sudo] password for user: ")
+            output = "[sudo] password for user: "
+            self.channel.send(output)
             try:
                 password = self.channel.recv(1024).decode('utf-8', errors='ignore').strip()
                 self.channel.send("Sorry, try again.\r\n")
                 self.channel.send("[sudo] password for user: ")
                 password = self.channel.recv(1024).decode('utf-8', errors='ignore').strip()
                 self.channel.send("sudo: 1 incorrect password attempt\r\n")
+                output += "****\r\nsudo: 1 incorrect password attempt\r\n"
             except:
                 pass
                 
         elif command == 'wget' or command == 'curl':
-            self.channel.send(f"{command}: command not found\r\n")
+            output = f"{command}: command not found\r\n"
+            self.channel.send(output)
             
         elif command == 'rm':
-            self.channel.send("rm: cannot remove 'file': Permission denied\r\n")
+            output = "rm: cannot remove 'file': Permission denied\r\n"
+            self.channel.send(output)
             
         elif command == 'mkdir':
-            self.channel.send("mkdir: cannot create directory 'test': Permission denied\r\n")
+            output = "mkdir: cannot create directory 'test': Permission denied\r\n"
+            self.channel.send(output)
             
         elif command == 'chmod':
-            self.channel.send("chmod: changing permissions of 'file': Operation not permitted\r\n")
+            output = "chmod: changing permissions of 'file': Operation not permitted\r\n"
+            self.channel.send(output)
             
         elif command == 'help':
-            self.channel.send("These shell commands are defined internally. Type `help' to see this list.\r\n")
+            output = "These shell commands are defined internally. Type `help' to see this list.\r\n"
+            self.channel.send(output)
             
         else:
-            self.channel.send(f"{command}: command not found\r\n")
+            output = f"{command}: command not found\r\n"
+            self.channel.send(output)
+            
+        return output.strip()
 
 class HoneypotServer:
     def __init__(self, host='0.0.0.0', port=2222):
