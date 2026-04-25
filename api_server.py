@@ -58,6 +58,16 @@ def get_http_logs():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/smtp-logs', methods=['GET'])
+def get_smtp_logs():
+    try:
+        limit = int(request.args.get('limit', 100))
+        offset = int(request.args.get('offset', 0))
+        logs = db.get_smtp_logs(limit, offset)
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/sessions', methods=['GET'])
 def get_sessions():
     try:
@@ -78,6 +88,7 @@ def get_dashboard_data():
         recent_sessions = db.get_sessions(50)
         recent_dns = db.get_dns_logs(50)
         recent_http = db.get_http_logs(50)
+        recent_smtp = db.get_smtp_logs(50)
         
         dashboard_data = {
             'summary': {
@@ -86,7 +97,8 @@ def get_dashboard_data():
                 'failed_logins': analytics.get('total_auth_attempts', 0) - analytics.get('successful_logins', 0),
                 'total_sessions': analytics.get('successful_logins', 0),
                 'total_dns_queries': analytics.get('total_dns_queries', 0),
-                'total_http_requests': analytics.get('total_http_requests', 0)
+                'total_http_requests': analytics.get('total_http_requests', 0),
+                'total_smtp_interactions': analytics.get('total_smtp_interactions', 0)
             },
             'top_source_ips': analytics.get('top_source_ips', []),
             'top_usernames': analytics.get('top_usernames', []),
@@ -94,14 +106,18 @@ def get_dashboard_data():
             'top_commands': analytics.get('top_commands', []),
             'top_dns_queries': analytics.get('top_dns_queries', []),
             'top_http_paths': analytics.get('top_http_paths', []),
+            'top_smtp_senders': analytics.get('top_smtp_senders', []),
+            'top_smtp_recipients': analytics.get('top_smtp_recipients', []),
             'top_user_agents': analytics.get('top_user_agents', []),
+            'top_attacked_ports': analytics.get('top_attacked_ports', []),
             'dns_type_breakdown': analytics.get('dns_type_breakdown', []),
             'daily_attempts': analytics.get('daily_attempts', []),
             'recent_auth': recent_auth,
             'recent_commands': recent_commands,
             'recent_sessions': recent_sessions,
             'recent_dns': recent_dns,
-            'recent_http': recent_http
+            'recent_http': recent_http,
+            'recent_smtp': recent_smtp
         }
         
         return jsonify(dashboard_data)

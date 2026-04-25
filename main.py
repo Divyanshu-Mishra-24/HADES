@@ -6,6 +6,7 @@ from ftp_honeypot import FTPHoneypot
 from telnet_honeypot import TelnetHoneypot
 from dns_honeypot import DNSHoneypot
 from http_honeypot import HTTPHoneypot
+from smtp_honeypot import SMTPHoneypot
 
 def start_ssh():
     ssh_server = SSHHoneypotServer(host='0.0.0.0', port=2222)
@@ -30,6 +31,11 @@ def start_http():
     http_server = HTTPHoneypot(host='0.0.0.0', port=8081)
     http_server.start()
 
+def start_smtp():
+    # Use 2525 to avoid needing admin privileges for port 25
+    smtp_server = SMTPHoneypot(host='0.0.0.0', port=2525)
+    smtp_server.start()
+
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
@@ -42,12 +48,14 @@ if __name__ == '__main__':
     telnet_thread = threading.Thread(target=start_telnet, daemon=True)
     dns_thread    = threading.Thread(target=start_dns,    daemon=True)
     http_thread   = threading.Thread(target=start_http,   daemon=True)
+    smtp_thread   = threading.Thread(target=start_smtp,   daemon=True)
 
     ssh_thread.start()
     ftp_thread.start()
     telnet_thread.start()
     dns_thread.start()
     http_thread.start()
+    smtp_thread.start()
 
     try:
         while True:
