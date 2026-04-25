@@ -16,7 +16,8 @@ import {
   ReloadOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  SearchOutlined
+  SearchOutlined,
+  MailOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import 'antd/dist/reset.css';
@@ -224,6 +225,50 @@ function App() {
     },
   ];
 
+  const smtpColumns = [
+    {
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (text) => <Text style={{ color: 'var(--text-muted)' }}>{new Date(text).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</Text>,
+    },
+    {
+      title: 'Source IP',
+      dataIndex: 'src_ip',
+      key: 'src_ip',
+      render: (text) => <Text style={{ color: 'var(--text-main)' }}>{text}</Text>
+    },
+    {
+      title: 'From',
+      dataIndex: 'mail_from',
+      key: 'mail_from',
+      render: (text) => <Text style={{ color: 'var(--neon-accent)' }}>{text || '-'}</Text>
+    },
+    {
+      title: 'To',
+      dataIndex: 'rcpt_to',
+      key: 'rcpt_to',
+      render: (text) => <Text style={{ color: 'var(--text-muted)', fontSize: 11 }}>{text?.substring(0, 30)}</Text>
+    },
+    {
+      title: 'Subject',
+      dataIndex: 'subject',
+      key: 'subject',
+      render: (text) => <Text style={{ color: 'var(--text-main)', fontWeight: 500 }}>{text || '(No Subject)'}</Text>
+    },
+    {
+      title: 'Credentials',
+      key: 'creds',
+      render: (_, record) => (
+        record.username ? (
+          <Text code style={{ fontSize: 10, background: 'rgba(255,169,64,0.1)', color: '#ffa940', border: 'none' }}>
+            {record.username}:{record.password}
+          </Text>
+        ) : <Text type="secondary">-</Text>
+      )
+    }
+  ];
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-page)' }}>
@@ -255,7 +300,11 @@ function App() {
     recent_sessions,
     recent_dns,
     recent_http,
-    top_http_paths
+    recent_smtp,
+    top_http_paths,
+    top_smtp_senders,
+    top_smtp_recipients,
+    top_attacked_ports
   } = dashboardData;
 
   const renderDashboard = () => {
@@ -313,6 +362,34 @@ function App() {
       </Col>
     );
 
+    const renderPortAttackChart = (title, data) => (
+      <Col span={8}>
+        <div className="glass-panel" style={{ padding: '20px 24px' }}>
+          <Title level={5} style={{ color: 'var(--text-main)', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1.5, fontSize: 14 }}>{title}</Title>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={data} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
+              <XAxis dataKey="port" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
+              <Tooltip 
+                cursor={{ fill: 'var(--glass-bg)' }}
+                contentStyle={{ 
+                  background: isDark ? 'rgba(20, 20, 25, 0.95)' : 'rgba(255, 255, 255, 0.95)', 
+                  border: '1px solid var(--glass-border)', 
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar dataKey="count" fill="var(--neon-accent)" radius={[4, 4, 0, 0]} barSize={25}>
+                {data?.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Col>
+    );
+
     return (
       <>
         <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
@@ -355,13 +432,23 @@ function App() {
               />
             </div>
           </Col>
-          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 20%', maxWidth: '20%' }}>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 16.66%', maxWidth: '16.66%' }}>
             <div className="glass-panel" style={{ padding: 24 }}>
               <Statistic
                 title="HTTP Requests Deflected"
                 value={summary.total_http_requests || 0}
                 prefix={<GlobalOutlined />}
                 valueStyle={{ color: '#722ed1' }}
+              />
+            </div>
+          </Col>
+          <Col xs={24} sm={12} lg={4} xl={4} style={{ flex: '1 0 16.66%', maxWidth: '16.66%' }}>
+            <div className="glass-panel" style={{ padding: 24 }}>
+              <Statistic
+                title="Emails Intercepted"
+                value={summary.total_smtp_interactions || 0}
+                prefix={<MailOutlined />}
+                valueStyle={{ color: '#fa8c16' }}
               />
             </div>
           </Col>
@@ -420,6 +507,11 @@ function App() {
         <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
           {renderIntegratedChart('Top DNS Queries', top_dns_queries, 'count', 'query_name')}
           {renderIntegratedChart('Top HTTP Paths', top_http_paths, 'count', 'path')}
+          {renderIntegratedChart('Top SMTP Senders', top_smtp_senders, 'count', 'mail_from')}
+        </Row>
+        <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
+          {renderIntegratedChart('Top SMTP Recipients', top_smtp_recipients, 'count', 'rcpt_to')}
+          {renderPortAttackChart('Port Attack Intensity', top_attacked_ports)}
           <Col span={8}>
             <div className="glass-panel" style={{ height: 264, padding: 0, overflow: 'hidden', position: 'relative' }}>
               <NetworkMesh data={dashboardData} theme={theme} compact={true} showGraph={true} showList={false} />
@@ -464,6 +556,15 @@ function App() {
           <Table
             columns={httpColumns}
             dataSource={recent_http}
+            rowKey="id"
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: true }}
+          />
+        </TabPane>
+        <TabPane tab={<span style={{ color: 'var(--text-main)' }}><MailOutlined /> SMTP Attack Intel</span>} key="5">
+          <Table
+            columns={smtpColumns}
+            dataSource={recent_smtp}
             rowKey="id"
             pagination={{ pageSize: 8 }}
             scroll={{ x: true }}

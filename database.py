@@ -77,6 +77,35 @@ class HoneypotDatabase:
                 payload TEXT
             )
         ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS smtp_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                src_ip TEXT NOT NULL,
+                src_port INTEGER,
+                ehlo TEXT,
+                mail_from TEXT,
+                rcpt_to TEXT,
+                subject TEXT,
+                data TEXT,
+                username TEXT,
+                password TEXT
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+    
+    def log_smtp_event(self, src_ip, src_port, ehlo=None, mail_from=None, rcpt_to=None, subject=None, data=None, username=None, password=None):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO smtp_logs 
+            (timestamp, src_ip, src_port, ehlo, mail_from, rcpt_to, subject, data, username, password)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (datetime.now().isoformat(), src_ip, src_port, ehlo, mail_from, rcpt_to, subject, data, username, password))
         
         conn.commit()
         conn.close()
@@ -236,6 +265,22 @@ class HoneypotDatabase:
         
         conn.close()
         return results
+
+    def get_smtp_logs(self, limit=100, offset=0):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT * FROM smtp_logs 
+            ORDER BY timestamp DESC 
+            LIMIT ? OFFSET ?
+        ''', (limit, offset))
+        
+        columns = [desc[0] for desc in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        conn.close()
+        return results
     
     def get_sessions(self, limit=100, offset=0):
         conn = sqlite3.connect(self.db_path)
@@ -302,6 +347,47 @@ class HoneypotDatabase:
         
         cursor.execute('SELECT user_agent, COUNT(*) as count FROM http_logs GROUP BY user_agent ORDER BY count DESC LIMIT 50')
         analytics['top_user_agents'] = [dict(zip(['user_agent', 'count'], row)) for row in cursor.fetchall()]
+        
+        # SMTP Analytics
+        cursor.execute('SELECT COUNT(*) FROM smtp_logs')
+        analytics['total_smtp_interactions'] = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT mail_from, COUNT(*) as count FROM smtp_logs WHERE mail_from IS NOT NULL GROUP BY mail_from ORDER BY count DESC LIMIT 50')
+        analytics['top_smtp_senders'] = [dict(zip(['mail_from', 'count'], row)) for row in cursor.fetchall()]
+
+        cursor.execute('SELECT rcpt_to, COUNT(*) as count FROM smtp_logs WHERE rcpt_to IS NOT NULL GROUP BY rcpt_to ORDER BY count DESC LIMIT 50')
+        analytics['top_smtp_recipients'] = [dict(zip(['rcpt_to', 'count'], row)) for row in cursor.fetchall()]
+        
+        # Port Analytics
+        port_stats = []
+        
+        # SSH (2222)
+        cursor.execute("SELECT COUNT(*) FROM authentication_events WHERE service = 'ssh'")
+        port_stats.append({'port': '2222', 'service': 'SSH', 'count': cursor.fetchone()[0]})
+        
+        # FTP (2121)
+        cursor.execute("SELECT COUNT(*) FROM authentication_events WHERE service = 'ftp'")
+        port_stats.append({'port': '2121', 'service': 'FTP', 'count': cursor.fetchone()[0]})
+        
+        # Telnet (23)
+        cursor.execute("SELECT COUNT(*) FROM authentication_events WHERE service = 'telnet'")
+        port_stats.append({'port': '23', 'service': 'Telnet', 'count': cursor.fetchone()[0]})
+        
+        # DNS (5354)
+        cursor.execute("SELECT COUNT(*) FROM dns_logs")
+        port_stats.append({'port': '5354', 'service': 'DNS', 'count': cursor.fetchone()[0]})
+        
+        # HTTP (8081)
+        cursor.execute("SELECT COUNT(*) FROM http_logs")
+        port_stats.append({'port': '8081', 'service': 'HTTP', 'count': cursor.fetchone()[0]})
+        
+        # SMTP (2525)
+        cursor.execute("SELECT COUNT(*) FROM smtp_logs")
+        port_stats.append({'port': '2525', 'service': 'SMTP', 'count': cursor.fetchone()[0]})
+        
+        # Sort by count
+        port_stats.sort(key=lambda x: x['count'], reverse=True)
+        analytics['top_attacked_ports'] = port_stats
         
         conn.close()
         return analytics
