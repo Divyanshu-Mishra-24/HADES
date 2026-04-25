@@ -2,110 +2,61 @@
 
 HADES is a **cyber-deception and threat monitoring framework** designed to attract, observe, and analyze attacker behaviour by emulating vulnerable network services.
 
-The system currently implements an **SSH honeypot** that records login attempts, captures attacker commands, and logs malicious activity for further analysis. The captured data is processed through analytics modules and visualized via a **Blue-Team monitoring dashboard**.
+The system currently implements an **SSH honeypot , FTP honeypot , DNS honeypot , HTTP honeypot and SMTP honeypot** that records login attempts, captures attacker commands, and logs malicious activity for further analysis. The captured data is processed through analytics modules and visualized via a **Blue-Team monitoring dashboard**.
 
 This project is developed for **cybersecurity research, academic experimentation, and attacker behaviour analysis**.
 
 ---
 
-# Architecture
-
-```
-             ┌───────────────┐
-             │    Attacker   │
-             └───────┬───────┘
-                     │
-                     ▼
-          ┌────────────────────┐
-          │ Honeypot Services  │
-          │  SSH (Implemented) │
-          │  FTP (Planned)     │
-          │  HTTP (Planned)    │
-          └─────────┬──────────┘
-                    │
-                    ▼
-          ┌────────────────────┐
-          │   Log Collector    │
-          │ Structured Events  │
-          └─────────┬──────────┘
-                    │
-                    ▼
-          ┌────────────────────┐
-          │      Database      │
-          │  Attack Telemetry  │
-          └─────────┬──────────┘
-                    │
-                    ▼
-          ┌────────────────────┐
-          │   Analytics Engine │
-          │ Threat Intelligence│
-          └─────────┬──────────┘
-                    │
-                    ▼
-          ┌────────────────────┐
-          │ Blue Team Dashboard│
-          │ Monitoring Console │
-          └────────────────────┘
-```
-
----
-
-# Project Status
-
-| Module                           | Status      |
-| -------------------------------- | ----------- |
-| SSH Honeypot                     | ✅ Implemented |
-| Dockerized Deployment            | ✅ Implemented |
-| Authentication Logging           | ✅ Implemented |
-| Command Capture                  | ✅ Implemented |
-| Blue-Team Dashboard              | ✅ Implemented |
-| Cloud Deployment                 | ⏳ Pending     |
-| FTP Honeypot                     | 🔜 Planned     |
-| HTTP Honeypot                    | 🔜 Planned     |
-| Multi-Service Honeypot Framework | 🔜 Planned     |
-
----
-
 # Features
 
-## SSH Honeypot
+### 🪤 Multi-Protocol Honeypots
 
-- Simulates an SSH server environment
-- Captures attacker login attempts
-- Logs usernames and passwords
-- Records attacker commands
-- Generates unique session IDs
-- Stores attacker activity logs
+Emulates five real-world network services simultaneously to attract and deceive attackers:
 
-## Attack Telemetry
+- **SSH** — Full fake Ubuntu shell via Paramiko. Accepts all password logins, simulates `ls`, `whoami`, `id`, `uname`, `netstat`, and more while silently logging every command
+- **FTP** — Accepts any credentials and responds to standard FTP commands (`SYST`, `FEAT`, `PWD`, `TYPE`)
+- **HTTP** — Flask-based web server with irresistible fake endpoints:
 
-The system records:
+  | Path | What it Serves |
+  |---|---|
+  | `/wp-admin` | Fake WordPress login form |
+  | `/.env` | Fake environment file with DB credentials |
+  | `/config.php` | Fake PHP config with database credentials |
+  | `/admin` | 403 Forbidden response |
+  | `/login` | 401 Invalid credentials response |
 
-- Source IP address
-- Username and password attempts
-- Login success or failure
-- Session ID
-- Command execution history
-- Attack timestamps
+- **SMTP** — Emulates a Postfix ESMTP server; captures decoded credentials and full email bodies from relay attempts
+- **DNS** — Responds to UDP queries with a dummy IP to keep probers engaged while logging every queried hostname
 
-This allows analysis of:
+### 🧠 Threat Intelligence Engine
 
-- Brute-force attacks
-- Credential dictionaries
-- Attacker behaviour
-- Command execution patterns
+Deep behavioural analysis powered by the `ThreatProfiler`:
 
-## Blue-Team Dashboard
+- **Brute Force Detection** — IPs with 10+ attempts per day, escalated to `high` above 100 attempts
+- **Credential Stuffing Detection** — Usernames targeted from 5+ unique IPs within 24 hours
+- **Privilege Escalation Detection** — Regex matching for `sudo su`, `chmod 777`, `/etc/shadow`, and more
+- **Data Exfiltration Detection** — Flags patterns like `curl | sh`, `base64 >`, and `tar czf /tmp`
 
-The monitoring dashboard provides:
+### 📊 Blue-Team Dashboard
 
-- Real-time attack logs
-- Session tracking
-- Attack frequency visualization
-- Command execution monitoring
-- Credential attempt analysis
+The React monitoring dashboard provides:
 
-## Containerized Deployment
+- **Operations Center** — Live stat cards, traffic velocity line chart, threat origin bar chart, and donut charts for top usernames, passwords, commands, DNS queries, HTTP paths, and SMTP senders
+- **Intel Logs** — Tabbed raw log viewer across all five protocols with timestamps, source IPs, and decoded credentials
+- **Network Mesh** — Interactive graph visualizing attacker IP connections and lateral movement
+- **Auto-Refresh** — Polls every 5 seconds for live telemetry
+- **Dark / Light Mode** — Full theme support across the entire UI
+
+### 🎨 3D Particle Background
+
+An animated Three.js particle system that assembles from a scattered field into a glowing shield/fingerprint shape and disperses — cycling continuously in the background.
+
+### 📤 Data Export & API
+
+Full REST API with 11 endpoints covering all log types, threat intelligence reports, per-IP behavioural profiles, and bulk JSON export.
+
+### 🐳 Containerized Deployment
 
 - Fully Dockerized infrastructure
 - Isolated honeypot environment
@@ -115,43 +66,86 @@ The monitoring dashboard provides:
 
 # Technology Stack
 
-| Layer          | Technology                                      |
-| -------------- | ----------------------------------------------- |
-| Backend        | Python, Paramiko / Twisted (SSH emulation), REST API |
-| Infrastructure | Docker, Docker Compose                          |
-| Database       | SQLite (current), Elasticsearch / MongoDB (future) |
-| Frontend       | React Dashboard                                 |
-| Analytics      | Python data processing                          |
+<table>
+  <tr>
+    <th>Layer</th>
+    <th>Technology</th>
+  </tr>
+  <tr>
+    <td><b>🖥️ Frontend</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" />
+      <img src="https://img.shields.io/badge/Ant_Design-0170FE?style=flat-square&logo=antdesign&logoColor=white" />
+      <img src="https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs&logoColor=white" />
+      <img src="https://img.shields.io/badge/Recharts-22b5bf?style=flat-square" />
+      <img src="https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white" />
+    </td>
+  </tr>
+  <tr>
+    <td><b>⚙️ Backend</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" />
+      <img src="https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white" />
+      <img src="https://img.shields.io/badge/Paramiko-FF6F00?style=flat-square" />
+      <img src="https://img.shields.io/badge/dnslib-4CAF50?style=flat-square" />
+    </td>
+  </tr>
+  <tr>
+    <td><b>🗄️ Database</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white" />
+    </td>
+  </tr>
+  <tr>
+    <td><b>🐳 Infrastructure</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" />
+      <img src="https://img.shields.io/badge/Docker_Compose-2496ED?style=flat-square&logo=docker&logoColor=white" />
+    </td>
+  </tr>
+  <tr>
+    <td><b>🔒 Honeypot Protocols</b></td>
+    <td>SSH &nbsp;·&nbsp; FTP &nbsp;·&nbsp; HTTP &nbsp;·&nbsp; SMTP &nbsp;·&nbsp; DNS</td>
+  </tr>
+  <tr>
+    <td><b>📡 API</b></td>
+    <td>
+      <img src="https://img.shields.io/badge/REST_API-FF6C37?style=flat-square&logo=postman&logoColor=white" />
+      <img src="https://img.shields.io/badge/Flask--CORS-000000?style=flat-square&logo=flask&logoColor=white" />
+    </td>
+  </tr>
+</table>
 
 ---
 
 # Project Structure
 
 ```
-HADES
+HADES/
 │
-├── honeypots
-│   ├── ssh
-│   │   └── ssh_honeypot.py
-│   ├── ftp        (planned)
-│   └── http       (planned)
+├── ssh_honeypot.py          # SSH honeypot & fake interactive shell
+├── ftp_honeypot.py          # FTP honeypot
+├── http_honeypot.py         # HTTP honeypot with fake endpoints
+├── smtp_honeypot.py         # SMTP honeypot with credential capture
+├── dns_honeypot.py          # DNS honeypot (UDP)
 │
-├── api
-│   └── api_server.py
+├── api_server.py            # Flask REST API (11 endpoints)
+├── analytics.py             # ThreatProfiler & risk scoring engine
+├── database.py              # SQLite ORM (HoneypotDatabase)
+├── honeypot.db              # SQLite database (auto-created at runtime)
 │
-├── analytics
-│   └── analytics.py
+├── frontend/
+│   ├── src/
+│   │   ├── App.js           # Main dashboard UI (Ant Design + Recharts)
+│   │   ├── Background.js    # Three.js particle shield animation
+│   │   ├── NetworkMesh.js   # Attacker network graph
+│   │   └── index.js         # React entry point
+│   └── package.json
 │
-├── dashboard
-│   └── React frontend
-│
-├── database
-│   └── database.py
-│
-├── docker
+├── docker/
 │   └── docker-compose.yml
 │
-├── docs
+├── docs/
 │   ├── SRS.md
 │   └── DesignDoc.md
 │
@@ -183,34 +177,11 @@ Once the containers start successfully:
 | Dashboard    | [http://localhost:3000](http://localhost:3000) |
 | API Server   | [http://localhost:5000](http://localhost:5000) |
 | SSH Honeypot | `localhost:2222`                               |
+| FTP Honeypot | `localhost:2121`                               |
+| DNS Honeypot | `localhost:5354`                               |
+| HTTP Honeypot | `localhost:8081`                               |
+| SMTP Honeypot | `localhost:2525`                               |
 
----
-
-# Testing the Honeypot (Attack Simulation)
-
-To simulate an attacker connecting to the honeypot, open a new terminal and run:
-
-```bash
-ssh test@127.0.0.1 -p 2222
-```
-
-Example login attempt:
-
-```
-username: test
-password: anything
-```
-
-The honeypot will:
-
-1. Capture the login attempt
-2. Log username and password
-3. Create a session ID
-4. Record commands executed in the session
-
-These logs can be viewed in the **dashboard interface**.
-
-> **Note:** The honeypot uses **port 2222 instead of port 22** to avoid conflicts with the host system SSH service.
 
 ---
 
@@ -246,18 +217,6 @@ docker compose restart
 
 ---
 
-# Example Attack Scenario
-
-1. An attacker attempts to connect to the SSH service.
-2. The honeypot captures login attempts.
-3. If login succeeds, a fake shell environment is provided.
-4. All commands executed are recorded.
-5. Attack logs are stored and visualized through the dashboard.
-
-This allows security researchers to analyze attacker behaviour and attack patterns.
-
----
-
 # Security Design
 
 The honeypot is designed with strict containment to prevent compromise of the host system.
@@ -278,24 +237,10 @@ Future development goals:
 
 - ☁️ Cloud deployment (AWS / Azure / GCP)
 - 🔀 Multi-service honeypot architecture
-- 📂 FTP honeypot implementation
-- 🌐 HTTP honeypot implementation
 - 🗺️ Geolocation-based attack mapping
 - 🧠 Threat intelligence enrichment
 - 🤖 Machine learning based attack clustering
 - ☸️ Kubernetes orchestration
-
----
-
-# Research Applications
-
-This project can be used for:
-
-- Studying brute-force attacks
-- Analysing credential stuffing
-- Attacker behaviour research
-- Cybersecurity education
-- Deception-based defence research
 
 ---
 
