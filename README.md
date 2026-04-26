@@ -133,6 +133,7 @@ HADES/
 ├── analytics.py             # ThreatProfiler & risk scoring engine
 ├── database.py              # SQLite ORM (HoneypotDatabase)
 ├── honeypot.db              # SQLite database (auto-created at runtime)
+├── attacker_terminal.py     # Specialized Terminal for Attackers             
 │
 ├── frontend/
 │   ├── src/
