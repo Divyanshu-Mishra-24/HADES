@@ -42,15 +42,13 @@ class FTPHoneypot:
                     conn.sendall(b"331 Please specify the password.\r\n")
                 elif cmd == 'PASS':
                     password = args
-                    
-                    # Log authentication attempt
-                    # For a honeypot, we might let them in
+                    # Log authentication attempt - even for honeypots, we capture this
                     session_id = self.database.log_authentication(
                         client_ip, client_port, username, password, success=True, service='ftp'
                     )
                     authenticated = True
                     conn.sendall(b"230 Login successful.\r\n")
-                    logging.info(f"FTP Fake successful login: {username}@{password} from {client_ip}")
+                    logging.info(f"FTP Login: {username}:{password} from {client_ip}")
                 elif cmd == 'QUIT':
                     conn.sendall(b"221 Goodbye.\r\n")
                     break

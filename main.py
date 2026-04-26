@@ -1,6 +1,8 @@
 import threading
 import logging
 import time
+import subprocess
+import sys
 from ssh_honeypot import HoneypotServer as SSHHoneypotServer
 from ftp_honeypot import FTPHoneypot
 from telnet_honeypot import TelnetHoneypot
@@ -36,6 +38,13 @@ def start_smtp():
     smtp_server = SMTPHoneypot(host='0.0.0.0', port=2525)
     smtp_server.start()
 
+def start_attacker_terminal():
+    logging.info("Launching Attacker Terminal...")
+    try:
+        subprocess.Popen([sys.executable, "attacker_terminal.py"])
+    except Exception as e:
+        logging.error(f"Failed to launch Attacker Terminal: {e}")
+
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
@@ -56,6 +65,9 @@ if __name__ == '__main__':
     dns_thread.start()
     http_thread.start()
     smtp_thread.start()
+
+    # Launch Attacker Terminal
+    start_attacker_terminal()
 
     try:
         while True:
